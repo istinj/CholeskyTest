@@ -41,6 +41,7 @@ public:
          const ColumnsBlockMap& row_2_, int max_pos_);
 
    void cholesky(SparseBlockMatrix<BlockType_>& block_cholesky_);
+   DenseBlock chDecomposeBlock(const DenseBlock& input_);
    DenseBlock scalarProd(const ColumnsBlockMap& row_1_,
          const ColumnsBlockMap& row_2_, int max_pos_);
 
@@ -50,8 +51,8 @@ public:
    bool isNonZeroBlock(const int r_, const int c_) const;
    void printBlock(const int r_, const int c_) const;
 
-   inline const int numRows(void) const {return _total_rows;};
-   inline const int numCols(void) const {return _total_cols;};
+   inline const int numRows(void) const {return _num_block_rows;};
+   inline const int numCols(void) const {return _num_block_cols;};
 
 protected:
    int _total_rows;
@@ -59,10 +60,6 @@ protected:
    int _num_block_rows;
    int _num_block_cols;
    int _block_dim = 1;
-
-   //! TODO: Test dimension and indexing of get/set methods
-   //! TODO: Test indexing of isZero function
-   //! TODO: Test and fix symbolic cholesky :/
 
    RowBlockContainer _row_container;
 };

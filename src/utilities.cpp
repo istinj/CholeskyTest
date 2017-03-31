@@ -38,7 +38,6 @@ void cholesky(const Matrix6f& input_, Matrix6f& L_){
    L_.transposeInPlace();
 }
 
-
 void loadMatrix(const std::string& name_, Eigen::MatrixXf& data_){
    cout << BOLDYELLOW << "\t" << "Opening file " << name_ << RESET << endl;
    fstream file(name_);
