@@ -178,12 +178,9 @@ void SparseMatrix::evaluateCholeskyStructure(SparseMatrix& cholesky_){
       int starting_col_idx = current_row.begin()->first;
       for(int c = starting_col_idx; c <= r; ++c){
          bool not_empty = false;
-         //! If the element is not zero in the original matrix,
-         //! then it will be so also in the cholesky
          if(isNonZeroElement(r,c)){
             not_empty = true;
          } else {
-            //! Evaluate the non zero elements due to fill in
             ColumnsMap& chol_upper_row = cholesky_._row_container[c];
             not_empty = evaluateScalarProdStructure(chol_current_row, chol_upper_row, c);
          }

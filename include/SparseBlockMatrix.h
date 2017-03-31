@@ -15,6 +15,7 @@
 #include <fstream>
 #include <string>
 #include <Eigen/Core>
+#include <Eigen/Cholesky>
 #include <boost/unordered_map.hpp>
 
 #include "utilities.h"
@@ -25,7 +26,9 @@ template<typename BlockType_>
 class SparseBlockMatrix {
 public:
    typedef BlockType_ DenseBlock; //! TODO Must be a static Eigen::Matrix -> manage exceptions
-   typedef std::map<int, DenseBlock> ColumnsBlockMap;
+   typedef std::map<int, DenseBlock, std::less<int>,
+         Eigen::aligned_allocator<std::pair<const int, DenseBlock> > > ColumnsBlockMap;
+
    typedef std::vector<ColumnsBlockMap> RowBlockContainer;
 
    SparseBlockMatrix();
@@ -41,7 +44,6 @@ public:
          const ColumnsBlockMap& row_2_, int max_pos_);
 
    void cholesky(SparseBlockMatrix<BlockType_>& block_cholesky_);
-   DenseBlock chDecomposeBlock(const DenseBlock& input_);
    DenseBlock scalarProd(const ColumnsBlockMap& row_1_,
          const ColumnsBlockMap& row_2_, int max_pos_);
 
@@ -61,7 +63,13 @@ protected:
    int _num_block_cols;
    int _block_dim = 1;
 
+   //! TODO: Fix cholesky numbers
+   //! TODO: traits to manage wrong BlockType_
+
    RowBlockContainer _row_container;
+
+public:
+   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 };
 
 } /* namespace sparse */

@@ -35,41 +35,33 @@ int main(int argc, char const *argv[])
    sparse::SparseBlockMatrix<Eigen::Matrix2f>* sp_block_mat = new sparse::SparseBlockMatrix<Eigen::Matrix2f>(3,3,2);
    sparse::SparseBlockMatrix<Eigen::Matrix2f> chol;
    Eigen::Matrix2f a;
+/*
+   1.3137    1.9933         0         0    1.4421    1.7743
+   1.9933    3.1610         0         0    2.3542    2.6394
+        0         0    0.2354    0.3563         0         0
+        0         0    0.3563    0.5396         0         0
+   1.4421    2.3542         0         0    2.1761    2.1368
+   1.7743    2.6394         0         0    2.1368    2.6851
+/**/
 
-   a << 2.744007,  1.919497,
-         1.919497, 3.191362;
+   a << 1.3137,   1.9933,
+         1.9933, 3.1610;
    sp_block_mat->setBlock(0,0,a);
 
-   a << 1.806722,  2.258476,
-         2.390472, 2.448052;
-   sp_block_mat->setBlock(0,1,a);
-
-   a << 2.123150,  0.823146,
-         1.962895, 1.338299;
+   a << 1.4421, 1.7743,
+         2.3542, 2.6394;
    sp_block_mat->setBlock(0,2,a);
 
-   a << 1.806722,  2.390472,
-         2.258476, 2.448052;
-   sp_block_mat->setBlock(1,0,a);
-
-   a << 2.828793, 2.967253,
-         2.967253, 3.572853;
+   a << 0.2354, 0.3563,
+         0.3563, 0.5396;
    sp_block_mat->setBlock(1,1,a);
 
-   a << 2.101034, 1.714458,
-         2.482527, 1.624698;
-   sp_block_mat->setBlock(1,2,a);
-
-   a << 2.123150,  1.962895,
-         0.823146, 1.338299;
+   a << 1.4421, 2.3542,
+         1.7743, 2.6394;
    sp_block_mat->setBlock(2,0,a);
 
-   a << 2.101034,  2.482527,
-         1.714458, 1.624698;
-   sp_block_mat->setBlock(2,1,a);
-
-   a << 2.199896,  0.931872,
-         0.931872, 1.265850;
+   a << 2.1761, 2.1368,
+         2.1368, 2.6851;
    sp_block_mat->setBlock(2,2,a);
 
 //   sp_block_mat->evaluateCholeskyStructure(chol);

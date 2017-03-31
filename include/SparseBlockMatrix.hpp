@@ -117,7 +117,7 @@ void SparseBlockMatrix<BlockType_>::printBlock(const int r_, const int c_) const
       return;
    }
 
-   cout << BOLDWHITE << "Block(" << r_ << "," << c_ << ")" << ":\n" <<
+   cerr << BOLDWHITE << "Block(" << r_ << "," << c_ << ")" << ":\n" <<
          CYAN << getBlock(r_,c_) << RESET << endl;
 }
 
@@ -161,15 +161,18 @@ void SparseBlockMatrix<BlockType_>::cholesky(SparseBlockMatrix<BlockType_>& bloc
       return;
    }
 
-   block_cholesky_ = SparseBlockMatrix<DenseBlock>(_num_block_rows, _num_block_cols, _block_dim);
+   block_cholesky_ = SparseBlockMatrix<DenseBlock>(_num_block_rows,
+         _num_block_cols, _block_dim);
+
+   std::vector<DenseBlock, Eigen::aligned_allocator<DenseBlock> > inverse_diagonal_blocks(_num_block_rows);
 
    //! Looping over rows
    for (int r = 0; r < _num_block_rows; ++r) {
+      cerr << "r: " << r << endl;
       const ColumnsBlockMap& curr_row = _row_container[r];
       ColumnsBlockMap& chol_curr_row = block_cholesky_._row_container[r];
 
-      vector<DenseBlock> diagonal_blocks(_num_block_rows);
-      vector<DenseBlock> inverse_diagonal_blocks(_num_block_rows);
+      cerr << &chol_curr_row << endl;
 
       if(curr_row.empty())
          return;
@@ -177,17 +180,20 @@ void SparseBlockMatrix<BlockType_>::cholesky(SparseBlockMatrix<BlockType_>& bloc
 
       //! Looping over cols
       for (int c = starting_col_idx; c <= r; ++c) {
+         cerr << "\tc: " << c << endl;
+
          DenseBlock accumulator = DenseBlock::Zero();
          DenseBlock chol_curr_rc_value = DenseBlock::Zero();
 
          ColumnsBlockMap& chol_upper_row = block_cholesky_._row_container[c];
-         accumulator = getBlock(r,c) - scalarProd(chol_curr_row, chol_upper_row, c-1);
-
+         cerr << "\t" << &chol_upper_row << endl;
+         accumulator = getBlock(r,c) - scalarProd(chol_curr_row, chol_upper_row, c);
          if(r == c){
-            //TODO chol_curr_rc_value = sqrt(accumulator);
-//            chol_curr_rc_value.setIdentity();
-            chol_curr_rc_value = chDecomposeBlock(accumulator);
-            diagonal_blocks[r] = chol_curr_rc_value;
+            //! TODO ERROR-> accumulator is not always positive semi definite
+            //! How to handle this problem? Anyway this should not occur since every
+            //! block is J^t*Omega*J in this case, so it is a quadratic form;
+            chol_curr_rc_value = accumulator.llt().matrixL();
+
             inverse_diagonal_blocks[r] = chol_curr_rc_value.inverse();
          } else {
             chol_curr_rc_value = inverse_diagonal_blocks[c] * accumulator;
@@ -196,25 +202,6 @@ void SparseBlockMatrix<BlockType_>::cholesky(SparseBlockMatrix<BlockType_>& bloc
       }
    }
 }
-
-template<typename BlockType_>
-BlockType_ SparseBlockMatrix<BlockType_>::chDecomposeBlock(const BlockType_& input_){
-   DenseBlock lower;
-   int dim = input_.rows();
-   lower.setZero();
-   for (int i = 0; i < dim; i++)
-      for (int j = 0; j < (i+1); j++) {
-         float s = 0;
-         for (int k = 0; k < j; k++)
-            s += lower(i, k) * lower(j, k);
-         lower(i, j) = (i == j) ?
-               sqrt((float)input_(i, j) - s) :
-               (1.0 / lower(j,j) * (input_(i,j) - s));
-      }
-   return lower;
-}
-
-
 
 template<typename BlockType_>
 bool SparseBlockMatrix<BlockType_>::evaluateScalarProdStructure(const ColumnsBlockMap& row_1_,
@@ -243,11 +230,12 @@ BlockType_ SparseBlockMatrix<BlockType_>::scalarProd(const ColumnsBlockMap& row_
       const ColumnsBlockMap& row_2_, int max_pos_){
    typename ColumnsBlockMap::const_iterator it_1 = row_1_.begin();
    typename ColumnsBlockMap::const_iterator it_2 = row_2_.begin();
-
    DenseBlock result = DenseBlock::Zero();
    while(it_1 != row_1_.end() && it_2 != row_2_.end()){
       int col_idx_1 = it_1->first;
       int col_idx_2 = it_2->first;
+      cerr << "\t\tcol_idx_1: " << col_idx_1 << endl
+            << "\t\tcol_idx_2: " << col_idx_2 << endl;
 
       if(col_idx_1 > max_pos_ || col_idx_2 > max_pos_)
          return result;
