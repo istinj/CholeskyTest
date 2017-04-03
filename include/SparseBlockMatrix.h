@@ -39,8 +39,8 @@ public:
    void reset(void);
    void loadFromTXT(const std::string path_to_file_);
 
-   void evaluateCholeskyStructure(SparseBlockMatrix<BlockType_>& block_cholesky_);
-   bool evaluateScalarProdStructure(const ColumnsBlockMap& row_1_,
+   void computeCholeskyStructure(SparseBlockMatrix<BlockType_>& block_cholesky_);
+   bool computeScalarProdStructure(const ColumnsBlockMap& row_1_,
          const ColumnsBlockMap& row_2_, int max_pos_);
 
    void cholesky(SparseBlockMatrix<BlockType_>& block_cholesky_);

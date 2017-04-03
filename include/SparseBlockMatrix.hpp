@@ -122,7 +122,7 @@ void SparseBlockMatrix<BlockType_>::printBlock(const int r_, const int c_) const
 }
 
 template<typename BlockType_>
-void SparseBlockMatrix<BlockType_>::evaluateCholeskyStructure(SparseBlockMatrix<BlockType_>& block_cholesky_){
+void SparseBlockMatrix<BlockType_>::computeCholeskyStructure(SparseBlockMatrix<BlockType_>& block_cholesky_){
    if(_total_cols != _total_rows){
       cerr << BOLDRED << "Error: matrix must be squared" <<
             RESET << endl;
@@ -145,7 +145,7 @@ void SparseBlockMatrix<BlockType_>::evaluateCholeskyStructure(SparseBlockMatrix<
             not_empty = true;
          } else {
             ColumnsBlockMap& chol_upper_row = block_cholesky_._row_container[c];
-            not_empty = evaluateScalarProdStructure(chol_curr_row, chol_upper_row, c);
+            not_empty = computeScalarProdStructure(chol_curr_row, chol_upper_row, c);
          }
          if(not_empty)
             chol_curr_row.insert(make_pair(c, DenseBlock::Ones()));
@@ -164,15 +164,12 @@ void SparseBlockMatrix<BlockType_>::cholesky(SparseBlockMatrix<BlockType_>& bloc
    block_cholesky_ = SparseBlockMatrix<DenseBlock>(_num_block_rows,
          _num_block_cols, _block_dim);
 
-   std::vector<DenseBlock, Eigen::aligned_allocator<DenseBlock> > inverse_diagonal_blocks(_num_block_rows);
+   std::vector<DenseBlock, Eigen::aligned_allocator<DenseBlock> > inverse_transpose_diagonal_blocks(_num_block_rows);
 
    //! Looping over rows
    for (int r = 0; r < _num_block_rows; ++r) {
-      cerr << "r: " << r << endl;
       const ColumnsBlockMap& curr_row = _row_container[r];
       ColumnsBlockMap& chol_curr_row = block_cholesky_._row_container[r];
-
-      cerr << &chol_curr_row << endl;
 
       if(curr_row.empty())
          return;
@@ -180,23 +177,20 @@ void SparseBlockMatrix<BlockType_>::cholesky(SparseBlockMatrix<BlockType_>& bloc
 
       //! Looping over cols
       for (int c = starting_col_idx; c <= r; ++c) {
-         cerr << "\tc: " << c << endl;
-
          DenseBlock accumulator = DenseBlock::Zero();
          DenseBlock chol_curr_rc_value = DenseBlock::Zero();
 
          ColumnsBlockMap& chol_upper_row = block_cholesky_._row_container[c];
-         cerr << "\t" << &chol_upper_row << endl;
-         accumulator = getBlock(r,c) - scalarProd(chol_curr_row, chol_upper_row, c);
+         accumulator = getBlock(r,c) - scalarProd(chol_curr_row, chol_upper_row, c-1);
          if(r == c){
             //! TODO ERROR-> accumulator is not always positive semi definite
             //! How to handle this problem? Anyway this should not occur since every
             //! block is J^t*Omega*J in this case, so it is a quadratic form;
             chol_curr_rc_value = accumulator.llt().matrixL();
-
-            inverse_diagonal_blocks[r] = chol_curr_rc_value.inverse();
+            inverse_transpose_diagonal_blocks[r] = chol_curr_rc_value.inverse().transpose();
          } else {
-            chol_curr_rc_value = inverse_diagonal_blocks[c] * accumulator;
+            //chol_curr_rc_value = inverse_transpose_diagonal_blocks[c] * accumulator;
+            chol_curr_rc_value = accumulator * inverse_transpose_diagonal_blocks[c];
          }
          chol_curr_row.insert(make_pair(c, chol_curr_rc_value));
       }
@@ -204,7 +198,7 @@ void SparseBlockMatrix<BlockType_>::cholesky(SparseBlockMatrix<BlockType_>& bloc
 }
 
 template<typename BlockType_>
-bool SparseBlockMatrix<BlockType_>::evaluateScalarProdStructure(const ColumnsBlockMap& row_1_,
+bool SparseBlockMatrix<BlockType_>::computeScalarProdStructure(const ColumnsBlockMap& row_1_,
       const ColumnsBlockMap& row_2_, int max_pos_){
    typename ColumnsBlockMap::const_iterator it_1 = row_1_.begin();
    typename ColumnsBlockMap::const_iterator it_2 = row_2_.begin();
@@ -234,13 +228,11 @@ BlockType_ SparseBlockMatrix<BlockType_>::scalarProd(const ColumnsBlockMap& row_
    while(it_1 != row_1_.end() && it_2 != row_2_.end()){
       int col_idx_1 = it_1->first;
       int col_idx_2 = it_2->first;
-      cerr << "\t\tcol_idx_1: " << col_idx_1 << endl
-            << "\t\tcol_idx_2: " << col_idx_2 << endl;
-
-      if(col_idx_1 > max_pos_ || col_idx_2 > max_pos_)
+      if(col_idx_1 > max_pos_ || col_idx_2 > max_pos_){
          return result;
+      }
       if(col_idx_1 == col_idx_2){
-         result += it_1->second * it_2->second;
+         result.noalias() += it_1->second * it_2->second.transpose();
          ++it_1;
          ++it_2;
       }
