@@ -122,6 +122,15 @@ void SparseBlockMatrix<BlockType_>::printBlock(const int r_, const int c_) const
 }
 
 template<typename BlockType_>
+void SparseBlockMatrix<BlockType_>::printMatrix(void) const {
+   cerr << BOLDWHITE <<  "Printing sparse matrix..." << RESET << endl;
+   for (int i = 0; i < numRows(); ++i) {
+      for (int j = 0; j < numCols(); ++j)
+         printBlock(i,j);
+   }
+}
+
+template<typename BlockType_>
 void SparseBlockMatrix<BlockType_>::computeCholeskyStructure(SparseBlockMatrix<BlockType_>& block_cholesky_){
    if(_total_cols != _total_rows){
       cerr << BOLDRED << "Error: matrix must be squared" <<
@@ -149,6 +158,26 @@ void SparseBlockMatrix<BlockType_>::computeCholeskyStructure(SparseBlockMatrix<B
          }
          if(not_empty)
             chol_curr_row.insert(make_pair(c, DenseBlock::Ones()));
+      }
+   }
+}
+
+template<typename BlockType_>
+void SparseBlockMatrix<BlockType_>::transpose(SparseBlockMatrix<BlockType_>& transpose_){
+   transpose_ = SparseBlockMatrix<DenseBlock>(_num_block_cols, _num_block_rows, _block_dim);
+   for (int r = 0; r < _num_block_rows; ++r) {
+      const ColumnsBlockMap& curr_row = _row_container[r];
+      if(curr_row.empty())
+         return;
+      for (int c = 0; c < _num_block_cols; ++c) {
+         ColumnsBlockMap& curr_transp_row = transpose_._row_container[c];
+
+         typename ColumnsBlockMap::const_iterator it = curr_row.find(c);
+         if(it == curr_row.end())
+            continue;
+         else {
+            curr_transp_row.insert(make_pair(r, it->second.transpose()));
+         }
       }
    }
 }
@@ -189,13 +218,87 @@ void SparseBlockMatrix<BlockType_>::cholesky(SparseBlockMatrix<BlockType_>& bloc
             chol_curr_rc_value = accumulator.llt().matrixL();
             inverse_transpose_diagonal_blocks[r] = chol_curr_rc_value.inverse().transpose();
          } else {
-            //chol_curr_rc_value = inverse_transpose_diagonal_blocks[c] * accumulator;
             chol_curr_rc_value = accumulator * inverse_transpose_diagonal_blocks[c];
          }
          chol_curr_row.insert(make_pair(c, chol_curr_rc_value));
       }
    }
 }
+
+
+template<typename BlockType_>
+template<typename VectorBlockType_>
+bool SparseBlockMatrix<BlockType_>::solveLinearSystem(const DenseVector<VectorBlockType_>& RHS_Vector_,
+      DenseVector<VectorBlockType_>& result_){
+   cerr << "solve" << endl;
+   if(_num_block_rows != _num_block_cols)
+      throw std::runtime_error("Error, non squared matrix :(");
+   //! Given Ax = B:
+   //! 1. A = LL^t
+   //! 2. Solve L(L^T x) = B -> Ly = B (FWD SUB)
+   //! 3. Solve L^t x = y; (BKW SUB)
+
+   //! TODO POINTERs NOT REFERENCES
+   SparseBlockMatrix<DenseBlock> L(_num_block_rows, _num_block_cols, _block_dim);
+   SparseBlockMatrix<DenseBlock> U(_num_block_cols, _num_block_rows, _block_dim);
+   cholesky(L);
+   L.transpose(U);
+
+   DenseVector<VectorBlockType_> Y;
+   L.fwdSubstitution(RHS_Vector_, Y);
+   U.bwdSubstitution(Y, result_);
+
+   cerr << endl << BOLDGREEN << "Y -> ";
+   Y.printVector();
+
+   cerr << BOLDGREEN << "RESULT -> ";
+   result_.printVector();
+   return true;
+}
+
+
+template<typename BlockType_>
+template<typename VectorBlockType_>
+void SparseBlockMatrix<BlockType_>::fwdSubstitution(const DenseVector<VectorBlockType_>& B_vector_,
+      DenseVector<VectorBlockType_>& result_){
+   if(_num_block_rows != _num_block_cols)
+      throw std::runtime_error("Error, non squared matrix :(");
+
+   if(B_vector_.numRows() != result_.numRows()){
+      result_.resize(B_vector_.numRows());
+   }
+
+   for (int r = 0; r < _num_block_rows; ++r) {
+      VectorBlockType_ res = B_vector_.getBlock(r);
+      for (int c = 0; c < r; ++c) {
+         res -= getBlock(r,c) * result_.getBlock(c);
+      }
+      res = getBlock(r,r).inverse() * res; //! TODO: check if transp and l/r mult
+      result_.setBlock(r, res);
+   }
+}
+
+template<typename BlockType_>
+template<typename VectorBlockType_>
+void SparseBlockMatrix<BlockType_>::bwdSubstitution(const DenseVector<VectorBlockType_>& B_vector_,
+      DenseVector<VectorBlockType_>& result_){
+   if(_num_block_rows != _num_block_cols)
+      throw std::runtime_error("Error, non squared matrix :(");
+
+   if(B_vector_.numRows() != result_.numRows())
+      result_.resize(B_vector_.numRows());
+
+   for (int r = _num_block_rows - 1; r >= 0; --r) {
+      VectorBlockType_ res = B_vector_.getBlock(r);
+      for (int c = r + 1; c < _num_block_cols; ++c) {
+         res -= getBlock(r,c) * result_.getBlock(c);
+      }
+      res = getBlock(r,r).inverse() * res; //! TODO: check if transp and l/r mult
+      result_.setBlock(r, res);
+   }
+
+}
+/**/
 
 template<typename BlockType_>
 bool SparseBlockMatrix<BlockType_>::computeScalarProdStructure(const ColumnsBlockMap& row_1_,
