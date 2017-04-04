@@ -38,7 +38,6 @@ public:
 
    void resize(const int new_rows_, const int new_cols_);
    void reset(void);
-   void loadFromTXT(const std::string path_to_file_);
 
    void computeCholeskyStructure(SparseBlockMatrix<BlockType_>& block_cholesky_);
    bool computeScalarProdStructure(const ColumnsBlockMap& row_1_,
@@ -53,10 +52,10 @@ public:
    bool solveLinearSystem(const DenseVector<VectorBlockType_>& RHS_Vector_,
          DenseVector<VectorBlockType_>& result_);
    template<typename VectorBlockType_>
-   void fwdSubstitution(const DenseVector<VectorBlockType_>& B_vector_,
+   void forwSubstitution(const DenseVector<VectorBlockType_>& B_vector_,
          DenseVector<VectorBlockType_>& result_);
    template<typename VectorBlockType_>
-   void bwdSubstitution(const DenseVector<VectorBlockType_>& B_vector_,
+   void backSubstitution(const DenseVector<VectorBlockType_>& B_vector_,
          DenseVector<VectorBlockType_>& result_);
 
 

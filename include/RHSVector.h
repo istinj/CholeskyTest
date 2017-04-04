@@ -22,10 +22,10 @@
 
 namespace sparse {
 
-template<typename BlockType_>
+template<typename VectorBlockType_>
 class DenseVector {
 public:
-   typedef BlockType_ DenseVectorBlock; //! TODO Must be a static Eigen::Matrix -> manage exceptions
+   typedef VectorBlockType_ DenseVectorBlock; //! TODO Must be a static Eigen::Matrix -> manage exceptions
    typedef std::vector<DenseVectorBlock, Eigen::aligned_allocator<DenseVectorBlock> > DenseVectorContainer;
 
    DenseVector();

@@ -7,10 +7,6 @@
 
 int main(int argc, char const *argv[])
 {
-   sparse::SparseBlockMatrix<Eigen::Matrix2f>* sp_block_mat = new sparse::SparseBlockMatrix<Eigen::Matrix2f>(3,3,2);
-   sparse::DenseVector<Eigen::Vector2f>* rhs_B = new sparse::DenseVector<Eigen::Vector2f>(3,2);
-   Eigen::Matrix2f a;
-   Eigen::Vector2f b;
    /*
     *
     * A matrix:
@@ -31,6 +27,12 @@ int main(int argc, char const *argv[])
     *
     *
    /**/
+
+
+   sparse::SparseBlockMatrix<Eigen::Matrix2f>* sp_block_mat = new sparse::SparseBlockMatrix<Eigen::Matrix2f>(3,3,2);
+   sparse::DenseVector<Eigen::Vector2f>* rhs_B = new sparse::DenseVector<Eigen::Vector2f>(3,2);
+   Eigen::Matrix2f a;
+   Eigen::Vector2f b;
 
    //! Setup the linear system (retarded fashion)
    a << 1.3137,   1.9933,
@@ -66,35 +68,12 @@ int main(int argc, char const *argv[])
          -1.3077;
    rhs_B->setBlock(2, b);
 
-
-
-/*
-   a << 0.3252, 0.3192,
-         -0.7549, 0.3129;
-   rhs_B->setBlock(0, a);
-
-   a << 1.3703, -0.8649,
-         -1.7115, -0.0301;
-   rhs_B->setBlock(1, a);
-
-   a << -0.1022, -0.1649,
-         -0.2414, 0.6277;
-   rhs_B->setBlock(2, a);
-
-/**/
-
    //! Solving linear system Ax = B
-   //   sparse::SparseBlockMatrix<Eigen::Matrix2f> chol;
-   //   sp_block_mat->cholesky(chol);
-   //
-   //   cerr << "main" << endl;
-   //   chol.printMatrix();
-
    sparse::DenseVector<Eigen::Vector2f>* deltaX = new sparse::DenseVector<Eigen::Vector2f>(3,2);
    sp_block_mat->solveLinearSystem((*rhs_B), (*deltaX));
 
-   //   cout << endl << BOLDGREEN << "Solution of the system:" << RESET <<  endl;
-   //   deltaX->printVector();
+   cout << endl << BOLDGREEN << "Solution of the system:" << RESET <<  endl;
+   deltaX->printVector();
 
 
 

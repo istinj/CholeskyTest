@@ -230,7 +230,6 @@ template<typename BlockType_>
 template<typename VectorBlockType_>
 bool SparseBlockMatrix<BlockType_>::solveLinearSystem(const DenseVector<VectorBlockType_>& RHS_Vector_,
       DenseVector<VectorBlockType_>& result_){
-   cerr << "solve" << endl;
    if(_num_block_rows != _num_block_cols)
       throw std::runtime_error("Error, non squared matrix :(");
    //! Given Ax = B:
@@ -245,21 +244,15 @@ bool SparseBlockMatrix<BlockType_>::solveLinearSystem(const DenseVector<VectorBl
    L.transpose(U);
 
    DenseVector<VectorBlockType_> Y;
-   L.fwdSubstitution(RHS_Vector_, Y);
-   U.bwdSubstitution(Y, result_);
-
-   cerr << endl << BOLDGREEN << "Y -> ";
-   Y.printVector();
-
-   cerr << BOLDGREEN << "RESULT -> ";
-   result_.printVector();
+   L.forwSubstitution(RHS_Vector_, Y);
+   U.backSubstitution(Y, result_);
    return true;
 }
 
 
 template<typename BlockType_>
 template<typename VectorBlockType_>
-void SparseBlockMatrix<BlockType_>::fwdSubstitution(const DenseVector<VectorBlockType_>& B_vector_,
+void SparseBlockMatrix<BlockType_>::forwSubstitution(const DenseVector<VectorBlockType_>& B_vector_,
       DenseVector<VectorBlockType_>& result_){
    if(_num_block_rows != _num_block_cols)
       throw std::runtime_error("Error, non squared matrix :(");
@@ -280,7 +273,7 @@ void SparseBlockMatrix<BlockType_>::fwdSubstitution(const DenseVector<VectorBloc
 
 template<typename BlockType_>
 template<typename VectorBlockType_>
-void SparseBlockMatrix<BlockType_>::bwdSubstitution(const DenseVector<VectorBlockType_>& B_vector_,
+void SparseBlockMatrix<BlockType_>::backSubstitution(const DenseVector<VectorBlockType_>& B_vector_,
       DenseVector<VectorBlockType_>& result_){
    if(_num_block_rows != _num_block_cols)
       throw std::runtime_error("Error, non squared matrix :(");
@@ -346,7 +339,5 @@ BlockType_ SparseBlockMatrix<BlockType_>::scalarProd(const ColumnsBlockMap& row_
    }
    return result;
 }
-
-
 
 } /* namespace sparse */
